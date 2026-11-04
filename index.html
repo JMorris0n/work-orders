@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HomeDesk Service Portal</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: enterprise service-desk parody: navy top bar, KPI strip, intake form beside a ticket table */
+:root{
+  --bg:#f4f6f9; --panel:#ffffff; --ink:#1b2333; --muted:#5b6576; --line:#d9dee7; --soft:#eef1f5;
+  --bar:#20304a; --bar-ink:#ffffff; --accent:#2f6fde; --accent-ink:#ffffff;
+  --new-bg:#fde8e0; --new:#a33a12; --prog-bg:#e1ecfd; --prog:#1d4fa8;
+  --hold-bg:#f3eee0; --hold:#7a5b0c; --done-bg:#e2f4e8; --done:#226b3d;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#11161f; --panel:#18202c; --ink:#e4e9f1; --muted:#97a2b4; --line:#2c3646; --soft:#1e2734;
+  --bar:#0b1018; --bar-ink:#e4e9f1; --accent:#5b91f0; --accent-ink:#0b1018;
+  --new-bg:#3a2119; --new:#f39b74; --prog-bg:#1a2a45; --prog:#8db4f5;
+  --hold-bg:#332c17; --hold:#e2c46c; --done-bg:#183324; --done:#7fd19d; color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans)}
+.top{background:var(--bar);color:var(--bar-ink);padding:12px max(16px,env(safe-area-inset-left));display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:space-between;align-items:center}
+.top b{font-size:1.1rem;letter-spacing:.01em}
+.top span{opacity:.75;font-size:.85rem}
+.wrap{max-width:1140px;margin:0 auto;padding:22px max(16px,env(safe-area-inset-left)) 48px}
+.banner{background:var(--hold-bg);color:var(--hold);border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:.9rem}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
+@media (max-width:700px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.kpi small{display:block;color:var(--muted);text-transform:uppercase;font-size:.72rem;letter-spacing:.06em}
+.kpi div{font-size:1.7rem;font-weight:600;font-variant-numeric:tabular-nums}
+.grid{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+h2{font-size:1rem;margin:0 0 10px}
+form{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;display:grid;gap:12px}
+label{font-size:.8rem;color:var(--muted);display:grid;gap:3px}
+input,select,textarea{font:inherit;font-size:.95rem;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:8px;width:100%}
+textarea{min-height:80px;resize:vertical}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+input:focus,select:focus,textarea:focus,button:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.trap{position:absolute;left:-9999px}
+button{font:inherit;cursor:pointer}
+.submit{background:var(--accent);color:var(--accent-ink);border:0;border-radius:4px;padding:10px;font-weight:600}
+.submit:disabled{opacity:.6;cursor:wait}
+.msg{margin:0;font-size:.9rem;min-height:1.4em;font-weight:600}
+.msg.ok{color:var(--done)} .msg.err{color:var(--new)}
+.qhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.qhead h2{margin:0}
+.tabs{display:flex;gap:4px}
+.tabs button{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:4px;padding:3px 10px;font-size:.85rem}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tablebox{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th{text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid var(--soft);vertical-align:top}
+tr.row{cursor:pointer} tr.row:hover td{background:var(--soft)}
+.num{font-family:var(--mono);font-size:.85rem;white-space:nowrap}
+.st{display:inline-block;padding:2px 8px;border-radius:3px;font-size:.75rem;font-weight:600;white-space:nowrap}
+.s-new{background:var(--new-bg);color:var(--new)} .s-prog{background:var(--prog-bg);color:var(--prog)}
+.s-hold{background:var(--hold-bg);color:var(--hold)} .s-done{background:var(--done-bg);color:var(--done)}
+.sla{white-space:nowrap} .late{color:var(--new);font-weight:600}
+.detail td{background:var(--soft);font-size:.88rem}
+.detail p{margin:0 0 6px;overflow-wrap:anywhere}
+.detail b{color:var(--muted);font-weight:600}
+.overlay{position:fixed;inset:0;background:rgba(10,14,22,.6);display:grid;place-items:center;padding:16px;z-index:20}
+.tip{background:var(--panel);color:var(--ink);border-radius:14px;width:min(420px,100%);padding:24px 22px 18px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.tip small{color:var(--muted);font-family:var(--mono);font-size:.8rem}
+.tip h3{margin:6px 0 4px;font-size:1.35rem}
+.tip p{margin:0 0 18px;color:var(--muted);font-size:.9rem}
+.tipgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tipgrid button{background:var(--soft);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:18px 0;font-size:1.35rem;font-weight:600}
+.tipgrid button:hover{border-color:var(--accent)}
+.tipgrid .wide{grid-column:1/-1;font-size:1rem;padding:12px 0}
+.tipcustom{display:grid;gap:8px;margin-top:10px;text-align:left}
+.tipcustom div{display:flex;gap:8px}
+.tipcustom button{background:var(--accent);color:var(--accent-ink);border:0;border-radius:6px;padding:0 16px;font-weight:600}
+.notip{background:none;border:0;color:var(--muted);text-decoration:underline;margin-top:14px;font-size:.85rem}
+.tipdone{font-size:1.05rem;font-weight:600;margin:8px 0 14px}
+.tipdone + button{background:var(--accent);color:var(--accent-ink);border:0;border-radius:6px;padding:10px 24px;font-weight:600}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.foot{color:var(--muted);font-size:.8rem;margin-top:10px}
+@media (max-width:600px){
+  thead{display:none}
+  table,tbody,tr,td{display:block;width:100%}
+  tr.row{border-bottom:1px solid var(--line);padding:8px 0}
+  tr.row td{border:0;padding:2px 12px}
+  td[data-l]::before{content:attr(data-l) ": ";color:var(--muted);font-size:.8rem}
+}
+</style>
+</head>
+<body>
+<div class="top"><b>HomeDesk Service Portal</b><span>Morrison Residence · Tier 1 Support: Jeff</span></div>
+<main class="wrap">
+  <div class="banner" id="banner" hidden></div>
+  <section class="kpis" aria-label="Queue stats">
+    <div class="kpi"><small>Open incidents</small><div id="kNew">–</div></div>
+    <div class="kpi"><small>In progress</small><div id="kProg">–</div></div>
+    <div class="kpi"><small>Resolved this month</small><div id="kDone">–</div></div>
+    <div class="kpi"><small>Avg. time to resolve</small><div id="kAvg">–</div></div>
+  </section>
+
+  <div class="grid">
+    <section aria-labelledby="newH">
+      <h2 id="newH">Open a new ticket</h2>
+      <form id="f" novalidate>
+        <label>Requester<input id="requester" required maxlength="60" autocomplete="name" placeholder="Your name"></label>
+        <label>Short description<input id="title" required maxlength="90" placeholder="e.g. Hang the hallway shelf"></label>
+        <div class="two">
+          <label>Category
+            <select id="category">
+              <option>Repairs</option><option>Cleaning</option><option>Yard</option><option>Vehicle</option>
+              <option>Kids &amp; nursery</option><option>Errands</option><option>Other</option>
+            </select>
+          </label>
+          <label>Impact
+            <select id="impact">
+              <option value="Low">Low</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="High">High: company arriving</option>
+            </select>
+          </label>
+        </div>
+        <label>Need by (optional)<input id="needBy" type="date"></label>
+        <label>Description<textarea id="description" maxlength="1000" placeholder="Details, location, parts or tools needed"></textarea></label>
+        <label>Household passcode<input id="passcode" type="password" required maxlength="40" autocomplete="current-password" placeholder="Required to submit"></label>
+        <input class="trap" id="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button class="submit" id="go" type="submit">Submit ticket</button>
+        <p class="msg" id="msg" role="status"></p>
+      </form>
+    </section>
+
+    <section aria-labelledby="qH">
+      <div class="qhead">
+        <h2 id="qH">Ticket queue</h2>
+        <div class="tabs" role="group" aria-label="Filter tickets">
+          <button type="button" data-f="active" aria-pressed="true">Active</button>
+          <button type="button" data-f="resolved" aria-pressed="false">Resolved</button>
+          <button type="button" data-f="all" aria-pressed="false">All</button>
+        </div>
+      </div>
+      <div class="tablebox">
+        <table>
+          <thead><tr><th>Number</th><th>Short description</th><th>Impact</th><th>State</th><th>SLA</th></tr></thead>
+          <tbody id="rows"><tr><td colspan="5" class="empty">Loading tickets…</td></tr></tbody>
+        </table>
+      </div>
+      <p class="foot" id="foot">Tap a ticket for details. Queue refreshes every minute.</p>
+    </section>
+  </div>
+</main>
+
+<div class="overlay" id="tipModal" hidden>
+  <div class="tip" role="dialog" aria-modal="true" aria-labelledby="tipH">
+    <div id="tipAsk">
+      <small id="tipNum"></small>
+      <h3 id="tipH">Add a tip?</h3>
+      <p>Tier 1 Support appreciates your business.</p>
+      <div class="tipgrid">
+        <button type="button" data-tip="15%">15%</button>
+        <button type="button" data-tip="20%">20%</button>
+        <button type="button" data-tip="25%">25%</button>
+        <button type="button" class="wide" id="tipCustomBtn">Custom</button>
+      </div>
+      <form class="tipcustom" id="tipCustom" hidden>
+        <label for="tipCustomVal">Custom tip</label>
+        <div><input id="tipCustomVal" maxlength="60" placeholder="Amount, or something nicer"><button type="submit">Add</button></div>
+      </form>
+      <button type="button" class="notip" data-tip="No tip">No tip</button>
+    </div>
+    <div id="tipThanks" hidden>
+      <h3>Thank you!</h3>
+      <p class="tipdone" id="tipDoneText"></p>
+      <button type="button" id="tipClose">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Paste the Apps Script web app URL here after deploying. Leave empty to preview with sample tickets. */
+const API_URL = "https://script.google.com/macros/s/AKfycbzf304GNzZx4WbV6upclpVJIYttxavvX89UMcbZuCpAgSU6TZ506zs3IXPuirXGZ2JM/exec";
+
+const SLA_DAYS = { High: 2, Medium: 5, Low: 14 };
+const STATE_CLASS = { "New": "s-new", "In progress": "s-prog", "On hold": "s-hold", "Resolved": "s-done" };
+const $ = s => document.querySelector(s);
+let tickets = [], filter = "active", openRow = null;
+
+const SAMPLE = [
+  { number:"INC0001003", created:new Date(Date.now()-864e5).toISOString(), requester:"Sample", title:"Hang the hallway shelf", category:"Repairs", impact:"High", needBy:"", description:"Sample ticket. Shelf and anchors are in the garage.", state:"New", notes:"", resolved:"" },
+  { number:"INC0001002", created:new Date(Date.now()-3*864e5).toISOString(), requester:"Sample", title:"Swap winter tires", category:"Vehicle", impact:"Medium", needBy:"", description:"Sample ticket.", state:"In progress", notes:"Parts on order.", resolved:"" },
+  { number:"INC0001001", created:new Date(Date.now()-9*864e5).toISOString(), requester:"Sample", title:"Fix the squeaky crib", category:"Kids & nursery", impact:"Low", needBy:"", description:"Sample ticket.", state:"Resolved", notes:"WD-40 applied.", resolved:new Date(Date.now()-6*864e5).toISOString(), tip:"20%" }
+];
+
+function el(tag, attrs, text){ const e=document.createElement(tag); for(const k in attrs||{}) e.setAttribute(k, attrs[k]); if(text!=null) e.textContent=text; return e; }
+function startOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
+function parseDay(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); }
+function dueDate(t){
+  if (t.needBy) return parseDay(t.needBy);
+  const c = startOfDay(t.created); c.setDate(c.getDate() + (SLA_DAYS[t.impact] || 5)); return c;
+}
+function slaText(t){
+  const due = dueDate(t);
+  if (t.state === "Resolved") return { text: (t.resolved && startOfDay(t.resolved) <= due) ? "Met" : "Missed", late: false };
+  const days = Math.round((due - startOfDay(new Date())) / 864e5);
+  if (days > 0) return { text: "Due in " + days + " d", late: days <= 1 };
+  if (days === 0) return { text: "Due today", late: true };
+  return { text: "Overdue " + (-days) + " d", late: true };
+}
+function fmt(iso){ return iso ? new Date(iso).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : ""; }
+
+function renderKpis(){
+  const now = new Date();
+  const done = tickets.filter(t => t.state === "Resolved" && t.resolved);
+  const thisMonth = done.filter(t => { const r=new Date(t.resolved); return r.getMonth()===now.getMonth() && r.getFullYear()===now.getFullYear(); });
+  const avg = done.length ? done.reduce((s,t)=> s + (new Date(t.resolved)-new Date(t.created)), 0) / done.length / 864e5 : null;
+  $("#kNew").textContent = tickets.filter(t => t.state === "New").length;
+  $("#kProg").textContent = tickets.filter(t => t.state === "In progress" || t.state === "On hold").length;
+  $("#kDone").textContent = thisMonth.length;
+  $("#kAvg").textContent = avg == null ? "–" : avg.toFixed(1) + " d";
+}
+
+function render(){
+  renderKpis();
+  const list = tickets.filter(t => filter === "all" || (filter === "resolved" ? t.state === "Resolved" : t.state !== "Resolved"));
+  const body = $("#rows"); body.replaceChildren();
+  if (!list.length){
+    const tr = el("tr"); tr.append(el("td",{colspan:"5",class:"empty"}, tickets.length ? "No tickets in this view." : "No tickets yet. Open the first one with the form."));
+    body.append(tr); return;
+  }
+  for (const t of list){
+    const sla = slaText(t);
+    const tr = el("tr",{class:"row",tabindex:"0","aria-expanded":String(openRow===t.number)});
+    tr.append(el("td",{class:"num","data-l":"Number"}, t.number));
+    tr.append(el("td",{"data-l":"Description"}, t.title));
+    tr.append(el("td",{"data-l":"Impact"}, t.impact));
+    const st = el("td",{"data-l":"State"}); st.append(el("span",{class:"st "+(STATE_CLASS[t.state]||"s-new")}, t.state)); tr.append(st);
+    tr.append(el("td",{class:"sla"+(sla.late?" late":""),"data-l":"SLA"}, sla.text));
+    const toggle = () => { openRow = openRow === t.number ? null : t.number; render(); };
+    tr.addEventListener("click", toggle);
+    tr.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
+    body.append(tr);
+    if (openRow === t.number){
+      const d = el("tr",{class:"detail"}), td = el("td",{colspan:"5"});
+      const line = (k,v) => { if(!v) return; const p=el("p"); p.append(el("b",null,k+": "), document.createTextNode(v)); td.append(p); };
+      line("Requester", t.requester); line("Category", t.category); line("Opened", fmt(t.created));
+      line("Need by", t.needBy ? parseDay(t.needBy).toLocaleDateString(undefined,{month:"short",day:"numeric"}) : "");
+      line("Description", t.description); line("Technician notes", t.notes); line("Resolved", fmt(t.resolved)); line("Tip", t.tip);
+      d.append(td); body.append(d);
+    }
+  }
+}
+
+async function load(){
+  if (!API_URL){ tickets = SAMPLE; showBanner("Preview mode: these are sample tickets. The form won't submit until the site is connected to the Google Sheet."); render(); return; }
+  try{
+    const r = await fetch(API_URL + "?t=" + Date.now());
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error || "Bad response");
+    tickets = data.tickets; $("#banner").hidden = true; render();
+  }catch(e){
+    showBanner("Couldn't reach the ticket system. Check your connection and refresh the page.");
+    if (!tickets.length){ const tr = el("tr"); tr.append(el("td",{colspan:"5",class:"empty"},"Tickets unavailable right now.")); $("#rows").replaceChildren(tr); }
+  }
+}
+function showBanner(t){ const b=$("#banner"); b.textContent=t; b.hidden=false; }
+
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
+  filter = b.dataset.f; document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-pressed", x===b)); render();
+}));
+
+$("#f").addEventListener("submit", async e => {
+  e.preventDefault();
+  const msg = $("#msg"); msg.className = "msg";
+  const payload = {
+    requester: $("#requester").value.trim(), title: $("#title").value.trim(), category: $("#category").value,
+    impact: $("#impact").value, needBy: $("#needBy").value, description: $("#description").value.trim(),
+    passcode: $("#passcode").value.trim(), website: $("#website").value
+  };
+  if (!payload.requester || !payload.title){ msg.classList.add("err"); msg.textContent = "Add your name and a short description."; return; }
+  if (!payload.passcode){ msg.classList.add("err"); msg.textContent = "Enter the household passcode."; return; }
+  if (!API_URL){ msg.textContent = "Preview mode: nothing was saved."; openTip("INC-PREVIEW", payload.passcode); return; }
+  const go = $("#go"); go.disabled = true; go.textContent = "Submitting…";
+  try{
+    const r = await fetch(API_URL, { method:"POST", body: JSON.stringify(payload) });
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error);
+    msg.classList.add("ok"); msg.textContent = data.number + " submitted. Tier 1 Support has been notified.";
+    ["title","description","needBy"].forEach(id => $("#"+id).value = "");
+    try { localStorage.setItem("hd-requester", payload.requester); localStorage.setItem("hd-pass", payload.passcode); } catch {}
+    load();
+    openTip(data.number, payload.passcode);
+  }catch(err){
+    msg.classList.add("err"); msg.textContent = "Ticket didn't go through" + (err.message ? ": " + err.message : ". Try again in a minute.");
+  }finally{ go.disabled = false; go.textContent = "Submit ticket"; }
+});
+
+/* Tip screen: pops up after a ticket is filed; the choice is saved on that ticket's row in the Sheet. */
+let tipFor = null, tipPass = "", lastFocus = null;
+function openTip(number, pass){
+  tipFor = number; tipPass = pass; lastFocus = document.activeElement;
+  $("#tipNum").textContent = number;
+  $("#tipAsk").hidden = false; $("#tipThanks").hidden = true; $("#tipCustom").hidden = true; $("#tipCustomVal").value = "";
+  $("#tipModal").hidden = false;
+  $("#tipModal .tipgrid button").focus();
+}
+function closeTip(){ $("#tipModal").hidden = true; tipFor = null; if (lastFocus) lastFocus.focus(); }
+async function chooseTip(tip){
+  tip = String(tip || "").trim(); if (!tip) return;
+  const btns = document.querySelectorAll("#tipAsk button"); btns.forEach(b => b.disabled = true);
+  let text = tip === "No tip" ? "No tip. Noted." : (/%$/.test(tip) ? tip + " tip added to " : "Custom tip added to ") + tipFor + ".";
+  if (API_URL && tipFor !== "INC-PREVIEW"){
+    try{
+      const r = await fetch(API_URL, { method:"POST", body: JSON.stringify({ action:"tip", number: tipFor, tip, passcode: tipPass }) });
+      const data = await r.json(); if (!data.ok) throw new Error(data.error);
+      load();
+    }catch(e){ text = "Your ticket is filed, but the tip didn't save" + (e.message ? ": " + e.message : "."); }
+  } else if (tipFor === "INC-PREVIEW") text += " (Preview: not saved.)";
+  btns.forEach(b => b.disabled = false);
+  $("#tipDoneText").textContent = text;
+  $("#tipAsk").hidden = true; $("#tipThanks").hidden = false; $("#tipClose").focus();
+}
+document.querySelectorAll("[data-tip]").forEach(b => b.addEventListener("click", () => chooseTip(b.dataset.tip)));
+$("#tipCustomBtn").addEventListener("click", () => { $("#tipCustom").hidden = false; $("#tipCustomVal").focus(); });
+$("#tipCustom").addEventListener("submit", e => { e.preventDefault(); chooseTip($("#tipCustomVal").value); });
+$("#tipClose").addEventListener("click", closeTip);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#tipModal").hidden && !$("#tipThanks").hidden) closeTip(); });
+
+try { const n = localStorage.getItem("hd-requester"); if (n) $("#requester").value = n; const pc = localStorage.getItem("hd-pass"); if (pc) $("#passcode").value = pc; } catch {}
+load();
+setInterval(() => { if (API_URL && !document.hidden) load(); }, 60000);
+</script>
+</body>
+</html>
