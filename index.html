@@ -256,12 +256,29 @@ function render(){
   }
 }
 
+function storedPass(){ try { return localStorage.getItem("hd-pass") || ""; } catch { return ""; } }
+function currentPass(){ return $("#passcode").value.trim() || storedPass(); }
+function showLocked(text){
+  tickets = []; renderKpis();
+  ["#kNew","#kProg","#kDone","#kAvg"].forEach(id => $(id).textContent = "–");
+  const tr = el("tr"); tr.append(el("td",{colspan:"5",class:"empty"}, text)); $("#rows").replaceChildren(tr);
+}
+
 async function load(){
   if (!API_URL){ tickets = SAMPLE; showBanner("Preview mode: these are sample tickets. The form won't submit until the site is connected to the Google Sheet."); render(); return; }
+  const pass = currentPass();
+  if (!pass){ showLocked("Enter the household passcode in the form to see the queue."); return; }
   try{
-    const r = await fetch(API_URL + "?t=" + Date.now());
+    const r = await fetch(API_URL, { method:"POST", body: JSON.stringify({ action:"list", passcode: pass }) });
     const data = await r.json();
-    if (!data.ok) throw new Error(data.error || "Bad response");
+    if (!data.ok){
+      if (/passcode/i.test(data.error || "")){
+        try { localStorage.removeItem("hd-pass"); } catch {}
+        $("#banner").hidden = true; showLocked("Passcode didn't match. Check it and try again."); return;
+      }
+      throw new Error(data.error || "Bad response");
+    }
+    try { localStorage.setItem("hd-pass", pass); } catch {}
     tickets = data.tickets; $("#banner").hidden = true; render();
   }catch(e){
     showBanner("Couldn't reach the ticket system. Check your connection and refresh the page.");
@@ -332,8 +349,9 @@ $("#tipClose").addEventListener("click", closeTip);
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#tipModal").hidden && !$("#tipThanks").hidden) closeTip(); });
 
 try { const n = localStorage.getItem("hd-requester"); if (n) $("#requester").value = n; const pc = localStorage.getItem("hd-pass"); if (pc) $("#passcode").value = pc; } catch {}
+$("#passcode").addEventListener("change", load);
 load();
-setInterval(() => { if (API_URL && !document.hidden) load(); }, 60000);
+setInterval(() => { if (API_URL && !document.hidden && currentPass()) load(); }, 60000);
 </script>
 </body>
 </html>
